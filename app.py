@@ -21,10 +21,10 @@ class MedicalUserProxyAgent(UserProxyAgent):
     def __init__(self, name="user_proxy", llm_config=None):
         super().__init__(name=name, llm_config=llm_config, human_input_mode="NEVER", max_consecutive_auto_reply=0)
 
-api_key = os.environ.get("API_KEY")
+
 llm_config = {
     "model": "llama3-8b-8192",
-    "api_key": api_key,
+    "api_key": "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",
     "base_url": "https://api.groq.com/openai/v1"
 }
 
@@ -50,22 +50,28 @@ if st.button("Get Assistance"):
         f"Gender: {gender}\n"
         f"Medical history: {medical_history}"
     )
+    user_message_dict = {
+        "Disease or condition": disease,
+        "Symptoms": symptoms,
+        "Age": age,
+        "Gender": gender,
+        "Medical history": medical_history
+    }
 
-    st.empty()
+    # st.empty()
 
+    messages = {}
     for assistant in [medical_assistant, nutrition_assistant, psychological_assistant]:
-        medical_user_proxy.initiate_chat(assistant, message=user_message)
-    group_chat = GroupChat(agents=[medical_assistant, nutrition_assistant, psychological_assistant, medical_user_proxy], messages=None, max_round=0)
-    group_chat_manager = GroupChatManager(groupchat=group_chat)
-    try:
-        group_chat_manager.run_chat()
-    except:
-        print("")
-    finally:
-        for agent in group_chat.agents:
-            if isinstance(agent, AssistantAgent):  
-                agent_messages = [message for message in group_chat.messages if message["sender"] == agent.name]
-                latest_response = agent_messages[-1]["content"] if agent_messages else "No response"
-                
-                st.subheader(f"{agent.name.replace('_', ' ').title()} Response:")
-                st.write(latest_response)
+        messages[assistant] = medical_user_proxy.initiate_chat(assistant, message=user_message)
+
+    st.subheader("Medical Assistant Output:")
+    for message in messages[medical_assistant].chat_history:
+        st.write(message["content"])
+
+    st.subheader("Nutrition Assistant Output:")
+    for message in messages[nutrition_assistant].chat_history:
+        st.write(message["content"])
+
+    st.subheader("Psychological Assistant Output:")
+    for message in messages[psychological_assistant].chat_history:
+        st.write(message["content"])
