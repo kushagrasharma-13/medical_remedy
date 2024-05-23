@@ -1,21 +1,6 @@
 import os
+import streamlit as st
 from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
-
-class GroupChatManager:
-    def __init__(self, groupchat):
-        self.groupchat = groupchat
-
-    def run_chat(self):
-        try:
-            self.groupchat.start()
-            while not self.groupchat.is_finished():
-                self.groupchat.step()
-        except IndexError as e:
-            if len(self.groupchat.messages) == 0:
-                print("No messages have been exchanged yet.")
-            else:
-                print("An error occurred while accessing messages:", e)
-
 
 class MedicalAssistantAgent(AssistantAgent):
     def __init__(self, name="medical_assistant", llm_config=None):
@@ -49,16 +34,16 @@ psychological_assistant = PsychologicalAssistantAgent(llm_config=llm_config)
 
 medical_user_proxy = MedicalUserProxyAgent()
 
-group_chat = GroupChat(agents=[medical_assistant, nutrition_assistant, psychological_assistant, 
-                               medical_user_proxy], messages=[], max_round=5)
+st.title("Medical Assistance System")
 
-def initiate_medical_query():
-    disease = input("Please enter the disease or condition: ")
-    symptoms = input("Please describe your symptoms: ")
-    age = input("Please enter your age: ")
-    gender = input("Please enter your gender: ")
-    medical_history = input("Please enter the diseases you have been previously diagnosed with: ")
+# Input fields
+disease = st.text_input("Please enter the disease or condition:")
+symptoms = st.text_area("Please describe your symptoms:")
+age = st.number_input("Please enter your age:", min_value=0, max_value=150, step=1)
+gender = st.radio("Please select your gender:", options=["Male", "Female", "Other"])
+medical_history = st.text_area("Please enter the diseases you have been previously diagnosed with:")
 
+if st.button("Get Assistance"):
     user_message = (
         f"Disease or condition: {disease}\n"
         f"Symptoms: {symptoms}\n"
@@ -67,12 +52,26 @@ def initiate_medical_query():
         f"Medical history: {medical_history}"
     )
 
+    # Clear previous outputs
+    st.empty()
+
+    # Run the medical query
     for assistant in [medical_assistant, nutrition_assistant, psychological_assistant]:
         medical_user_proxy.initiate_chat(assistant, message=user_message)
-    
+    group_chat = GroupChat(agents=[medical_assistant, nutrition_assistant, psychological_assistant, medical_user_proxy], messages=None, max_round=0)
     group_chat_manager = GroupChatManager(groupchat=group_chat)
+    try:
+        group_chat_manager.run_chat()
+    except:
+        print("")
+    finally:
+        # Display responses
+        for agent in group_chat.agents:
+            if isinstance(agent, AssistantAgent):  
+                # Find the latest message from the agent
+                agent_messages = [message for message in group_chat.messages if message["sender"] == agent.name]
+                latest_response = agent_messages[-1]["content"] if agent_messages else "No response"
+                
+                st.subheader(f"{agent.name.replace('_', ' ').title()} Response:")
+                st.write(latest_response)
 
-    group_chat_manager.run_chat()
-
-if __name__ == "__main__":
-    initiate_medical_query()
