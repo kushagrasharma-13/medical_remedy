@@ -36,9 +36,10 @@ class MedicalUserProxyAgent(UserProxyAgent):
     def __init__(self, name="user_proxy", llm_config=None):
         super().__init__(name=name, llm_config=llm_config, human_input_mode="NEVER", max_consecutive_auto_reply=0)
 
+GROQAI_API_KEY = os.environ.get("GROQAI_API_KEY")
 llm_config = {
     "model": "llama3-8b-8192",
-    "api_key": "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",
+    "api_key": GROQAI_API_KEY,
     "base_url": "https://api.groq.com/openai/v1"
 }
 
