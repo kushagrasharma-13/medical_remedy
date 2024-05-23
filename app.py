@@ -36,7 +36,6 @@ medical_user_proxy = MedicalUserProxyAgent()
 
 st.title("Medical Assistance System")
 
-# Input fields
 disease = st.text_input("Please enter the disease or condition:")
 symptoms = st.text_area("Please describe your symptoms:")
 age = st.number_input("Please enter your age:", min_value=0, max_value=150, step=1)
@@ -52,10 +51,8 @@ if st.button("Get Assistance"):
         f"Medical history: {medical_history}"
     )
 
-    # Clear previous outputs
     st.empty()
 
-    # Run the medical query
     for assistant in [medical_assistant, nutrition_assistant, psychological_assistant]:
         medical_user_proxy.initiate_chat(assistant, message=user_message)
     group_chat = GroupChat(agents=[medical_assistant, nutrition_assistant, psychological_assistant, medical_user_proxy], messages=None, max_round=0)
@@ -65,13 +62,10 @@ if st.button("Get Assistance"):
     except:
         print("")
     finally:
-        # Display responses
         for agent in group_chat.agents:
             if isinstance(agent, AssistantAgent):  
-                # Find the latest message from the agent
                 agent_messages = [message for message in group_chat.messages if message["sender"] == agent.name]
                 latest_response = agent_messages[-1]["content"] if agent_messages else "No response"
                 
                 st.subheader(f"{agent.name.replace('_', ' ').title()} Response:")
                 st.write(latest_response)
-
